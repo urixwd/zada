@@ -35,7 +35,7 @@ This document is the whole brief: background, product decisions, data, build pla
 | `storage.js` | localStorage layer (history, W/D/L record), every access wrapped in try/catch. |
 | `squad.js` | `squad.json` as an ES module, so the game needs no `fetch` and runs from `file://` too. |
 | `ui.js`, `index.html`, `styles.css` | The screens: home, match, result, history. RTL, red/black, mobile-first. |
-| `test/` | 27 tests: game logic, content lint, storage, and a full match played through jsdom. |
+| `test/` | 32 tests: game logic, content lint, storage, and a full match played through jsdom (with the real CSS injected). |
 
 ---
 
@@ -170,11 +170,22 @@ This directory is **not a git repository yet**. Steps:
 - [x] `index.html` + `styles.css` — RTL, red/black, mobile-first, all screens
 - [x] localStorage layer: history, W/D/L record, try/catch
 - [x] Final screen: verdict + copy summary for WhatsApp + PNG result card
-- [ ] Manual browser pass (full match, reload, phone width) — not done yet, needs a human or permission to drive Chrome
+- [x] Manual browser pass at phone width — found 6 bugs jsdom could not see (see below), all fixed and covered by tests
 - [x] git init + push to GitHub
 - [x] Pages enabled, live URL verified (all files 200 and identical to local)
 
 ---
+
+## 9b. Bugs the browser found that jsdom did not
+
+Kept here as a warning: green tests are not a substitute for looking at the screen.
+
+1. `hidden` did nothing on elements with `display: flex` — the outcome panel showed before a choice was made. Fixed with a global `[hidden] { display: none !important; }`, now asserted with the real CSS injected into jsdom.
+2. The scoreline read in the opposite order to the team names on the board. Fixed with one `scoreLine(us, them)` helper used everywhere.
+3. Player photos never loaded — wixstatic refuses the request with a referrer. Fixed with `referrerpolicy="no-referrer"`.
+4. The shirt number was drawn on top of the photo instead of being a fallback. It now hides when the photo loads.
+5. Choice texts were never passed through `render()`, so a raw `{fwd1}` reached the screen. The placeholder test now walks the whole pipeline, not just `render()`.
+6. Minutes could go backwards (89' then 78'). Each round now has its own minute window and the minute always advances.
 
 ## 10. Open questions for the user
 

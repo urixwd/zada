@@ -41,6 +41,9 @@ test("minutes advance through the match", () => {
     const mins = rounds.map((r) => r.minute);
     assert.ok(mins[0] <= 20, `round 1 minute ${mins[0]}`);
     assert.ok(mins[3] >= 72 && mins[4] >= 72);
+    for (let i = 1; i < mins.length; i++) {
+      assert.ok(mins[i] > mins[i - 1], `seed ${seed}: minutes went backwards ${mins.join(", ")}`);
+    }
   }
 });
 
@@ -89,6 +92,21 @@ test("every placeholder in every text resolves", () => {
     for (const t of texts) {
       const out = render(t, c);
       assert.ok(!/\{\w+\}/.test(out), `event ${event.id} left a placeholder: ${out}`);
+    }
+  }
+});
+
+test("nothing the player ever sees contains a raw placeholder", () => {
+  for (let seed = 1; seed <= 300; seed++) {
+    let state = startMatch({ ...deps, seed });
+    while (!state.finished) {
+      const shown = [state.current.text, ...state.current.choices];
+      for (const t of shown) assert.ok(!/\{\w+\}/.test(t), `seed ${seed} shows "${t}"`);
+      const res = choose(state, seed % 2, deps);
+      for (const t of [res.resolved.choiceText, res.resolved.outcomeText, res.resolved.eventText]) {
+        assert.ok(!/\{\w+\}/.test(t), `seed ${seed} logged "${t}"`);
+      }
+      state = res.state;
     }
   }
 });

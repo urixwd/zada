@@ -2,7 +2,8 @@
 // כל מה שצריך מוזרק פנימה, כדי שאפשר יהיה לבדוק הכל ב-node.
 
 export const ROUND_PHASES = ["open", "mid", "mid", "end", "end"];
-const MINUTE_RANGES = { open: [3, 20], mid: [24, 68], end: [72, 90] };
+// טווח דקות לכל סבב, כך שהמשחק תמיד מתקדם קדימה ונשאר מקום לסבב הבא
+const ROUND_MINUTES = [[3, 20], [24, 48], [50, 68], [72, 85], [86, 90]];
 
 /** גנרטור אקראי עם זרע — אותו זרע = אותו משחק בדיוק. */
 export function mulberry32(seed) {
@@ -73,7 +74,9 @@ export function render(text, ctx) {
 function buildRound(state, events, squad, rng) {
   const phase = ROUND_PHASES[state.round];
   const event = pickEvent(events, phase, state.us, state.them, state.usedIds, rng);
-  const [lo, hi] = MINUTE_RANGES[phase];
+  const [rangeLo, hi] = ROUND_MINUTES[state.round];
+  // הדקה תמיד מתקדמת: משחק לא חוזר אחורה מ-89 ל-78
+  const lo = Math.min(Math.max(rangeLo, state.lastMinute + 1), hi);
   const ctx = {
     opponent: state.opponent,
     minute: randInt(rng, lo, hi),
@@ -81,6 +84,7 @@ function buildRound(state, events, squad, rng) {
     players: drawSlots(event.slots, squad, rng)
   };
   if (event.text.includes("{n1}%")) ctx.numbers.n1 = randInt(rng, 62, 78);
+  state.lastMinute = ctx.minute;
   state.usedIds.push(event.id);
   state.us += event.pre.us;
   state.them += event.pre.them;
@@ -89,7 +93,7 @@ function buildRound(state, events, squad, rng) {
     phase,
     minute: ctx.minute,
     text: render(event.text, ctx),
-    choices: event.choices.map((c) => c.text),
+    choices: event.choices.map((c) => render(c.text, ctx)),
     ctx,
     event
   };
@@ -107,6 +111,7 @@ export function startMatch({ events, squad, opponents, seed }) {
     them: 0,
     round: 0,
     usedIds: [],
+    lastMinute: 0,
     log: [],
     finished: false,
     current: null
@@ -132,7 +137,7 @@ export function choose(state, choiceIndex, { events, squad }) {
     minute: state.current.minute,
     eventText: state.current.text,
     choiceIndex,
-    choiceText: choice.text,
+    choiceText: render(choice.text, ctx),
     outcome: isGood ? "good" : "bad",
     outcomeText: render(outcome.text, ctx),
     score: { us: state.us, them: state.them }
@@ -147,6 +152,11 @@ export function choose(state, choiceIndex, { events, squad }) {
     buildRound(state, events, squad, state.rng);
   }
   return { state, resolved };
+}
+
+/** התוצאה כפי שהיא מוצגת: היריבה משמאל ואנחנו מימין, כמו שמות הקבוצות על הלוח. */
+export function scoreLine(us, them) {
+  return `${them} - ${us}`;
 }
 
 /** שורת סיכום מצחיקה לפי התוצאה הסופית. */

@@ -13,6 +13,9 @@
 
 * { box-sizing: border-box; }
 
+/* חייב לבוא לפני כל display אחר: אחרת display:flex מנצח את תכונת hidden */
+[hidden] { display: none !important; }
+
 html, body {
   margin: 0;
   padding: 0;
@@ -40,7 +43,6 @@ body {
 }
 
 .screen { display: flex; flex-direction: column; gap: 14px; flex: 1; }
-.screen[hidden] { display: none; }
 
 /* ───────── בית ───────── */
 .badge {
@@ -148,7 +150,6 @@ body {
   place-items: center;
 }
 .card-photo img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
-.card-photo img[hidden] { display: none; }
 .card-photo span { position: absolute; font-size: 34px; font-weight: 900; color: #fff; }
 .event-text { margin: 0; font-size: 17px; line-height: 1.65; }
 
@@ -186,6 +187,14 @@ body {
 .outcome-score { font-weight: 900; font-size: 18px; }
 .outcome-score.good { color: var(--green); }
 .outcome-score.bad { color: #ff6a6f; }
+.hint { color: var(--muted); font-size: 13px; text-align: center; margin: 0; }
+.outcome { cursor: pointer; }
+
+/* מעבר מהיר לאירוע הבא, בלי כפתור המשך */
+.swap-out { animation: swapOut 0.16s ease forwards; }
+.swap-in { animation: swapIn 0.2s ease; }
+@keyframes swapOut { to { opacity: 0; transform: translateY(-10px); } }
+@keyframes swapIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 
 /* ───────── סיום ───────── */
 .result-label { text-align: center; color: var(--muted); margin: 18px 0 0; letter-spacing: 3px; font-size: 13px; }

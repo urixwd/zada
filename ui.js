@@ -1,7 +1,7 @@
 // זדה בול — חיבור הלוגיקה למסך. כאן יושב כל מה שנוגע ל-DOM ול-localStorage.
 import { EVENTS, OPPONENTS } from "./events.js";
 import { SQUAD } from "./squad.js";
-import { startMatch, choose, verdict, shareText, randomSeed } from "./game.js";
+import { startMatch, choose, verdict, shareText, randomSeed, scoreLine } from "./game.js";
 import { load, addMatch, clear } from "./storage.js";
 
 const deps = { events: EVENTS, squad: SQUAD, opponents: OPPONENTS };
@@ -22,7 +22,7 @@ const screens = {
 };
 
 let state = null;
-let lastRound = null;
+let advanceTimer = null;
 
 function show(name) {
   for (const [key, el] of Object.entries(screens)) el.hidden = key !== name;
@@ -37,17 +37,25 @@ function toast(message) {
   toast.timer = setTimeout(() => { el.hidden = true; }, 2200);
 }
 
+// בעברית "1 הפסדים" נשמע נורא, אז יחיד ורבים בנפרד
+const plural = (n, one, many) => (n === 1 ? one : `${n} ${many}`);
+
 function recordLine() {
   const { record, matches } = load(store);
   if (!matches.length) return "עוד לא ניהלת משחק. מזל טוב, אתה עדיין אופטימי.";
-  return `${matches.length} משחקים · ${record.w} ניצחונות · ${record.d} תיקו · ${record.l} הפסדים`;
+  return [
+    plural(matches.length, "משחק אחד", "משחקים"),
+    plural(record.w, "ניצחון אחד", "ניצחונות"),
+    plural(record.d, "תיקו אחד", "תיקו"),
+    plural(record.l, "הפסד אחד", "הפסדים")
+  ].join(" · ");
 }
 
 // ───────── מסך המשחק ─────────
 
 function renderScore(flash) {
   const el = $("score");
-  el.textContent = `${state.us} - ${state.them}`;
+  el.textContent = scoreLine(state.us, state.them);
   if (flash) {
     el.classList.remove("flash");
     void el.offsetWidth;
@@ -75,10 +83,13 @@ function renderRound() {
   $("minute").textContent = `דקה ${current.minute}'`;
   $("event-text").textContent = current.text;
   $("event-number").textContent = player.number;
+  // המספר הוא גיבוי בלבד: ברגע שהתמונה נטענת הוא נעלם
+  const number = $("event-number");
   photo.hidden = true;
+  number.hidden = false;
   photo.alt = player.name;
-  photo.onload = () => { photo.hidden = false; };
-  photo.onerror = () => { photo.hidden = true; };
+  photo.onload = () => { photo.hidden = false; number.hidden = true; };
+  photo.onerror = () => { photo.hidden = true; number.hidden = false; };
   photo.src = player.image_url;
 
   renderScore(false);
@@ -95,7 +106,7 @@ function onChoice(index) {
   const before = { us: state.us, them: state.them };
   const res = choose(state, index, deps);
   state = res.state;
-  lastRound = res.resolved;
+  window.__zada = state;
 
   const scored = res.resolved.score.us - before.us;
   const conceded = res.resolved.score.them - before.them;
@@ -107,17 +118,36 @@ function onChoice(index) {
   $("outcome-text").textContent = res.resolved.outcomeText;
   const scoreEl = $("outcome-score");
   scoreEl.className = `outcome-score ${res.resolved.outcome}`;
-  scoreEl.textContent = parts.length ? `${parts.join(" · ")} — ${state.us} - ${state.them}` : `בלי שערים — ${state.us} - ${state.them}`;
-  $("btn-next").textContent = state.finished ? "לשריקת הסיום" : "המשך";
+  const now = scoreLine(state.us, state.them);
+  scoreEl.textContent = parts.length ? `${parts.join(" · ")} — ${now}` : `בלי שערים — ${now}`;
+  $("outcome-hint").textContent = state.finished ? "שריקת סיום…" : "רגע, ממשיכים…";
   $("outcome").hidden = false;
 
   renderScore(Boolean(scored || conceded));
   renderPips();
+
+  // בלי כפתור המשך: קוראים את התוצאה וממשיכים לבד. נגיעה מדלגת קדימה.
+  const readingTime = Math.min(4200, 1600 + res.resolved.outcomeText.length * 28);
+  clearTimeout(advanceTimer);
+  advanceTimer = setTimeout(advance, readingTime);
 }
 
-function onNext() {
-  if (state.finished) return finishMatch();
-  renderRound();
+function advance() {
+  clearTimeout(advanceTimer);
+  if ($("outcome").hidden) return;
+  const panel = $("outcome");
+  panel.classList.add("swap-out");
+  setTimeout(() => {
+    panel.classList.remove("swap-out");
+    if (state.finished) return finishMatch();
+    renderRound();
+    for (const el of [$("card-wrap"), $("choices")]) {
+      if (!el) continue;
+      el.classList.remove("swap-in");
+      void el.offsetWidth;
+      el.classList.add("swap-in");
+    }
+  }, 160);
 }
 
 // ───────── מסך הסיום ─────────
@@ -131,7 +161,7 @@ function finishMatch() {
     rounds: state.log.map((r) => ({ eventId: r.eventId, choiceIndex: r.choiceIndex, outcome: r.outcome }))
   });
 
-  $("result-score").textContent = `${state.us} - ${state.them}`;
+  $("result-score").textContent = scoreLine(state.us, state.them);
   $("result-opponent").textContent = state.opponent;
   $("result-verdict").textContent = verdict(state.us, state.them);
   $("result-log").innerHTML = state.log
@@ -178,7 +208,9 @@ function drawCard() {
 
   ctx.font = "900 230px Heebo, sans-serif";
   ctx.fillStyle = "#ffffff";
-  ctx.fillText(`${state.us} - ${state.them}`, size / 2, 470);
+  ctx.direction = "ltr";
+  ctx.fillText(scoreLine(state.us, state.them), size / 2, 470);
+  ctx.direction = "rtl";
 
   ctx.font = "700 42px Heebo, sans-serif";
   ctx.fillStyle = "#f8f3eb";
@@ -240,7 +272,7 @@ function renderHistory() {
         .map((m) => {
           const cls = m.score.us > m.score.them ? "w" : m.score.us === m.score.them ? "d" : "l";
           const when = new Date(m.date).toLocaleDateString("he-IL", { day: "2-digit", month: "2-digit" });
-          return `<li><span class="res ${cls}">${m.score.us} - ${m.score.them}</span><span>${m.opponent}</span><span class="when">${when}</span></li>`;
+          return `<li><span class="res ${cls}">${scoreLine(m.score.us, m.score.them)}</span><span>${m.opponent}</span><span class="when">${when}</span></li>`;
         })
         .join("")
     : `<p class="empty">אין עדיין משחקים. לך לנהל.</p>`;
@@ -251,7 +283,7 @@ function renderHistory() {
 
 function newMatch() {
   state = startMatch({ ...deps, seed: randomSeed() });
-  lastRound = null;
+  window.__zada = state; // לבדיקות בלבד
   renderRound();
   show("match");
 }
@@ -272,7 +304,7 @@ $("btn-clear").addEventListener("click", () => {
   renderHistory();
   toast("נמחק. התחלה נקייה.");
 });
-$("btn-next").addEventListener("click", onNext);
+$("outcome").addEventListener("click", advance);
 $("btn-copy").addEventListener("click", copySummary);
 $("btn-image").addEventListener("click", downloadCard);
 $("choices").addEventListener("click", (e) => {
