@@ -1,5 +1,7 @@
 # זדה בול (Zada Ball) — task spec
 
+**Live: https://urixwd.github.io/zada/** · repo `git@github.com:urixwd/zada.git`
+
 A single-page, Hebrew, RTL browser game about coaching Hapoel Jerusalem FC. Static site, no backend, deployed to GitHub Pages.
 
 This document is the whole brief: background, product decisions, data, build plan, verification and tracker. An agent picking this up should need nothing else except the files in this directory.
@@ -28,6 +30,12 @@ This document is the whole brief: background, product decisions, data, build pla
 | `squad.json` | 24 players: `number`, `name`, `position` (`GK`/`CB`/`FB`/`MID`/`FWD`), `image_url` (wixstatic URLs, hotlinked). |
 | `zada-logo.svg` | The game's logo. Has a baked-in cream background rect (`#F8F3EB`) — strip that rect so it sits on the dark theme, or keep it as a badge. |
 | `TASK.md` | This file. |
+| `events.js` | The 45 events as templates: role slots, 2 choices, a good and a bad outcome each, with score effects. Built from `events.md`. |
+| `game.js` | Pure game logic — seeded RNG, event draw, slot draw, scoring, verdict, share text. No DOM, no storage. |
+| `storage.js` | localStorage layer (history, W/D/L record), every access wrapped in try/catch. |
+| `squad.js` | `squad.json` as an ES module, so the game needs no `fetch` and runs from `file://` too. |
+| `ui.js`, `index.html`, `styles.css` | The screens: home, match, result, history. RTL, red/black, mobile-first. |
+| `test/` | 27 tests: game logic, content lint, storage, and a full match played through jsdom. |
 
 ---
 
@@ -126,8 +134,9 @@ The agent must be able to check its own work without asking a human.
    - the score only ever changes as the chosen outcome declares;
    - the storage layer survives `localStorage` throwing (inject a fake that throws).
 2. **Content lint** — a script asserting: 37 events, each with exactly 2 choices, each choice with a good and a bad outcome, no empty strings, no Latin characters left in player-facing Hebrew text by mistake.
-3. **Manual browser check** — only at the end, and only after tests pass: run `python3 -m http.server` in the project directory, open it, play a full match, check RTL and phone width (~390px), verify the history screen persists after a reload.
-4. **Deployment check** — after Pages is live, load the public URL and play one match.
+3. **jsdom match** (`test/ui.test.js`) — boots `index.html` in jsdom, clicks through a whole match, checks the outcome, the score, the result screen, the history after a reload, and the photo fallback. This is what replaces a browser for everyday checking.
+4. **Manual browser check** — only at the end, and only after tests pass: run `python3 -m http.server` in the project directory, open it, play a full match, check RTL and phone width (~390px), verify the history screen persists after a reload.
+5. **Deployment check** — after Pages is live, fetch every file from the public URL and compare it to the local copy.
 
 ---
 
@@ -153,17 +162,17 @@ This directory is **not a git repository yet**. Steps:
 - [x] Logo in the project (`zada-logo.svg`)
 - [x] Decide: role slots, localStorage, GitHub Pages, football-only content
 - [x] **Event list approved by the user** (37 events, plus ~8 more wanted)
-- [ ] Write ~8 more events, to ~45 total
-- [ ] Write ~180 outcomes (45 events × 2 choices × good/bad), with score effects
-- [ ] Convert events to templates with role slots → `events.js`
-- [ ] `game.js` — pure logic: draw, slots, choices, scoring, seeded RNG
-- [ ] Unit tests + content lint, all green
-- [ ] `index.html` + `styles.css` — RTL, red/black, mobile-first, all screens
-- [ ] localStorage layer: history, W/D/L record, try/catch
-- [ ] Final screen: verdict + copy summary for WhatsApp + PNG result card
-- [ ] Manual browser pass (full match, reload, phone width)
-- [ ] git init + push to GitHub
-- [ ] Enable Pages, verify the live URL, write it into this file
+- [x] 45 events total (37 approved + 8 new)
+- [x] 180 outcomes written, with score effects
+- [x] Events converted to templates with role slots → `events.js`
+- [x] `game.js` — pure logic: draw, slots, choices, scoring, seeded RNG
+- [x] Unit tests + content lint + jsdom match, 27 green
+- [x] `index.html` + `styles.css` — RTL, red/black, mobile-first, all screens
+- [x] localStorage layer: history, W/D/L record, try/catch
+- [x] Final screen: verdict + copy summary for WhatsApp + PNG result card
+- [ ] Manual browser pass (full match, reload, phone width) — not done yet, needs a human or permission to drive Chrome
+- [x] git init + push to GitHub
+- [x] Pages enabled, live URL verified (all files 200 and identical to local)
 
 ---
 
