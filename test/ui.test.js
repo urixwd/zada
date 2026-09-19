@@ -30,9 +30,9 @@ const savedState = (doc) => doc.defaultView.localStorage.getItem("zadaball.v1");
 
 const $ = (doc, id) => doc.getElementById(id);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-// לוחצים על פאנל התוצאה כדי לדלג, ומחכים לאנימציית המעבר הקצרה
+// לוחצים על המשך, ומחכים לאנימציית המעבר הקצרה
 const skip = async (doc) => {
-  $(doc, "outcome").click();
+  $(doc, "btn-next").click();
   await sleep(260);
 };
 const visible = (doc, id) => !$(doc, id).hidden;
@@ -62,7 +62,7 @@ test("a full match runs from kick-off to the final whistle", async () => {
     assert.ok(visible(doc, "outcome"), `round ${round} showed no outcome`);
     assert.ok($(doc, "outcome-text").textContent.length > 15);
     assert.match($(doc, "score").textContent, /^\d+ - \d+$/);
-    await skip(doc); // אין כפתור המשך: נגיעה מדלגת לאירוע הבא
+    await skip(doc);
   }
 
   assert.ok(visible(doc, "screen-result"), "the result screen did not open");
@@ -156,16 +156,24 @@ test("player photos are requested without a referrer, so wix serves them", async
   assert.equal($(doc, "event-photo").getAttribute("referrerpolicy"), "no-referrer");
 });
 
-test("the round advances on its own, without a continue button", async () => {
+test("choosing hides the question and waits on the continue button", async () => {
   const doc = await boot();
-  assert.equal($(doc, "btn-next"), null, "the continue button should be gone");
   $(doc, "btn-play").click();
   const firstEvent = $(doc, "event-text").textContent;
-  doc.querySelector("#choices .choice").click();
-  assert.ok(visible(doc, "outcome"));
+  assert.ok(visible(doc, "card-wrap"), "the question should be on screen before choosing");
 
-  await sleep(4600); // ההמתנה הארוכה ביותר לקריאה, ועוד האנימציה
-  assert.ok(!visible(doc, "outcome"), "the outcome panel did not close on its own");
-  assert.notEqual($(doc, "event-text").textContent, firstEvent, "the next event was not drawn");
+  doc.querySelector("#choices .choice").click();
+  assert.ok(!visible(doc, "card-wrap"), "the question should disappear once answered");
+  assert.ok(!visible(doc, "choices"), "the choices should disappear once answered");
+  assert.ok(visible(doc, "outcome"), "the result should be shown");
+  assert.ok(visible(doc, "btn-next"), "the continue button should be shown");
+
+  await sleep(2500); // בלי לגעת: המסך לא זז לבד
+  assert.ok(visible(doc, "outcome"), "the outcome closed by itself");
+  assert.equal($(doc, "event-text").textContent, firstEvent, "the round advanced without a click");
+
+  await skip(doc);
+  assert.ok(visible(doc, "card-wrap"), "the next question did not come back");
+  assert.notEqual($(doc, "event-text").textContent, firstEvent);
   assert.equal(doc.querySelectorAll("#choices .choice").length, 2);
 });

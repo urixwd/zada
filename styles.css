@@ -187,9 +187,6 @@ body {
 .outcome-score { font-weight: 900; font-size: 18px; }
 .outcome-score.good { color: var(--green); }
 .outcome-score.bad { color: #ff6a6f; }
-.hint { color: var(--muted); font-size: 13px; text-align: center; margin: 0; }
-.outcome { cursor: pointer; }
-
 /* מעבר מהיר לאירוע הבא, בלי כפתור המשך */
 .swap-out { animation: swapOut 0.16s ease forwards; }
 .swap-in { animation: swapIn 0.2s ease; }

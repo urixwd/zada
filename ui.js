@@ -22,7 +22,6 @@ const screens = {
 };
 
 let state = null;
-let advanceTimer = null;
 
 function show(name) {
   for (const [key, el] of Object.entries(screens)) el.hidden = key !== name;
@@ -95,6 +94,7 @@ function renderRound() {
   renderScore(false);
   renderPips();
 
+  $("card-wrap").hidden = false;
   $("choices").hidden = false;
   $("choices").innerHTML = current.choices
     .map((text, i) => `<button class="choice" data-choice="${i}">${text}</button>`)
@@ -114,26 +114,25 @@ function onChoice(index) {
   if (scored) parts.push(`${scored} לנו`);
   if (conceded) parts.push(`${conceded} להם`);
 
+  // הבחירה נעשתה: מסתירים את השאלה ומשאירים רק את התוצאה
+  $("card-wrap").hidden = true;
   $("choices").hidden = true;
   $("outcome-text").textContent = res.resolved.outcomeText;
   const scoreEl = $("outcome-score");
   scoreEl.className = `outcome-score ${res.resolved.outcome}`;
   const now = scoreLine(state.us, state.them);
   scoreEl.textContent = parts.length ? `${parts.join(" · ")} — ${now}` : `בלי שערים — ${now}`;
-  $("outcome-hint").textContent = state.finished ? "שריקת סיום…" : "רגע, ממשיכים…";
+  $("btn-next").textContent = state.finished ? "לשריקת הסיום" : "המשך";
   $("outcome").hidden = false;
+  $("outcome").classList.remove("swap-in");
+  void $("outcome").offsetWidth;
+  $("outcome").classList.add("swap-in");
 
   renderScore(Boolean(scored || conceded));
   renderPips();
-
-  // בלי כפתור המשך: קוראים את התוצאה וממשיכים לבד. נגיעה מדלגת קדימה.
-  const readingTime = Math.min(4200, 1600 + res.resolved.outcomeText.length * 28);
-  clearTimeout(advanceTimer);
-  advanceTimer = setTimeout(advance, readingTime);
 }
 
 function advance() {
-  clearTimeout(advanceTimer);
   if ($("outcome").hidden) return;
   const panel = $("outcome");
   panel.classList.add("swap-out");
@@ -142,7 +141,6 @@ function advance() {
     if (state.finished) return finishMatch();
     renderRound();
     for (const el of [$("card-wrap"), $("choices")]) {
-      if (!el) continue;
       el.classList.remove("swap-in");
       void el.offsetWidth;
       el.classList.add("swap-in");
@@ -304,7 +302,7 @@ $("btn-clear").addEventListener("click", () => {
   renderHistory();
   toast("נמחק. התחלה נקייה.");
 });
-$("outcome").addEventListener("click", advance);
+$("btn-next").addEventListener("click", advance);
 $("btn-copy").addEventListener("click", copySummary);
 $("btn-image").addEventListener("click", downloadCard);
 $("choices").addEventListener("click", (e) => {
