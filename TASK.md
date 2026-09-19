@@ -149,6 +149,7 @@ This directory is **not a git repository yet**. Steps:
 3. Enable Pages: Settings → Pages → Source: "Deploy from a branch" → `main` / `/ (root)`. Or `gh api` the equivalent.
 4. Because the site is served from `https://<user>.github.io/<repo>/`, **all asset paths must be relative** (`./styles.css`, not `/styles.css`).
 5. Confirm the live URL works, then put it at the top of this file.
+6. Pages caches assets for about 10 minutes. After a deploy, hard-reload (cmd+shift+R) before checking, or you will test the previous build — this already fooled one verification pass.
 
 `raw.md` and `TASK.md` are committed too; they're harmless on Pages.
 
