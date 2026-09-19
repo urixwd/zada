@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>זדה בול</title>
+<meta name="description" content="אתה המאמן של הפועל ירושלים. חמש החלטות, והכל יכול לקרות.">
+<meta name="theme-color" content="#0b0b0c">
+<meta property="og:title" content="זדה בול">
+<meta property="og:description" content="אתה המאמן של הפועל ירושלים. חמש החלטות, והכל יכול לקרות.">
+<link rel="icon" href="./zada-logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<div class="phone">
+
+  <!-- ───────── מסך בית ───────── -->
+  <section id="screen-home" class="screen">
+    <div class="badge"><img src="./zada-logo.svg" alt="זדה בול"></div>
+    <h1 class="title">זדה בול</h1>
+    <p class="tagline">אתה המאמן של הפועל ירושלים.<br>חמש החלטות, 90 דקות, והכל יכול לקרות.</p>
+    <button id="btn-play" class="btn btn-main">שחק משחק</button>
+    <p id="home-record" class="record"></p>
+    <button id="btn-history" class="btn btn-ghost">היסטוריה</button>
+  </section>
+
+  <!-- ───────── מסך משחק ───────── -->
+  <section id="screen-match" class="screen" hidden>
+    <header class="scoreboard">
+      <div class="team">הפועל י-ם</div>
+      <div id="score" class="score">0 - 0</div>
+      <div id="opponent" class="team"></div>
+    </header>
+    <div class="matchbar">
+      <span id="minute" class="minute"></span>
+      <span id="pips" class="pips"></span>
+    </div>
+
+    <article class="card">
+      <div class="card-photo"><img id="event-photo" alt="" loading="lazy"><span id="event-number"></span></div>
+      <p id="event-text" class="event-text"></p>
+    </article>
+
+    <div id="choices" class="choices"></div>
+
+    <div id="outcome" class="outcome" hidden>
+      <p id="outcome-text"></p>
+      <p id="outcome-score" class="outcome-score"></p>
+      <button id="btn-next" class="btn btn-main">המשך</button>
+    </div>
+  </section>
+
+  <!-- ───────── מסך סיום ───────── -->
+  <section id="screen-result" class="screen" hidden>
+    <p class="result-label">שריקת סיום</p>
+    <div class="result-score">
+      <span>הפועל י-ם</span>
+      <strong id="result-score">0 - 0</strong>
+      <span id="result-opponent"></span>
+    </div>
+    <p id="result-verdict" class="verdict"></p>
+    <ol id="result-log" class="log"></ol>
+    <button id="btn-again" class="btn btn-main">עוד משחק</button>
+    <div class="row">
+      <button id="btn-copy" class="btn btn-ghost">העתק סיכום</button>
+      <button id="btn-image" class="btn btn-ghost">תמונה לשיתוף</button>
+    </div>
+    <button id="btn-home" class="btn btn-link">לדף הבית</button>
+  </section>
+
+  <!-- ───────── היסטוריה ───────── -->
+  <section id="screen-history" class="screen" hidden>
+    <h2 class="title small">היסטוריה</h2>
+    <p id="history-record" class="record"></p>
+    <ul id="history-list" class="history"></ul>
+    <button id="btn-history-back" class="btn btn-main">חזרה</button>
+    <button id="btn-clear" class="btn btn-link">מחק הכל</button>
+  </section>
+
+  <p id="toast" class="toast" hidden></p>
+</div>
+<script type="module" src="./ui.js"></script>
+</body>
+</html>

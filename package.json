@@ -1,0 +1,11 @@
+{
+  "name": "zada-ball",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/"
+  },
+  "devDependencies": {
+    "jsdom": "^30.1.0"
+  }
+}
